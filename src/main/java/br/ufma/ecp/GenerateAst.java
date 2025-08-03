@@ -20,6 +20,7 @@ public class GenerateAst {
       "Unary    : Token operator, Expr right"
     ));
   }
+
   private static void defineAst(String outputDir, String baseName, List<String> types) throws IOException {
     String path = outputDir + "/" + baseName + ".java";
     PrintWriter writer = new PrintWriter(path, "UTF-8");
@@ -41,18 +42,6 @@ public class GenerateAst {
 
     writer.println("}");
     writer.close();
-  }
-  
-  private static void defineVisitor(PrintWriter writer, String baseName, List<String> types) {
-    writer.println("  interface Visitor<R> {");
-
-    for (String type : types) {
-      String typeName = type.split(":")[0].trim();
-      writer.println("    R visit" + typeName + baseName + "(" + typeName + " " + baseName.toLowerCase() + ");");
-    }
-
-    writer.println("}");
-     writer.close();
   }
 
   private static void defineVisitor(PrintWriter writer, String baseName, List<String> types) {
