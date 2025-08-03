@@ -15,17 +15,14 @@ class Scanner {
     this.source = source;
   }
 }
+  List<Token> scanTokens() {
+    while (!isAtEnd()) {
+      // We are at the beginning of the next lexeme.
+      start = current;
+      scanToken();
+    }
 
-List<Token> scanTokens() {
-  while (!isAtEnd()) {
-    start = current;
-    scanToken();
+    tokens.add(new Token(EOF, "", null, line));
+    return tokens;
   }
-
-  tokens.add(new Token(EOF, "", null, line));
-  return tokens;
-}
-private int start = 0;
-private int current = 0;
-private int line = 1;
-
+  
