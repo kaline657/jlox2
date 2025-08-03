@@ -15,9 +15,9 @@ class Scanner {
     this.source = source;
   }
 }
+
 List<Token> scanTokens() {
   while (!isAtEnd()) {
-    // Estamos no início do próximo lexema.
     start = current;
     scanToken();
   }
@@ -25,3 +25,7 @@ List<Token> scanTokens() {
   tokens.add(new Token(EOF, "", null, line));
   return tokens;
 }
+private int start = 0;
+private int current = 0;
+private int line = 1;
+
