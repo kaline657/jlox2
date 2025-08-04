@@ -6,7 +6,8 @@ import java.io.InputStreamReader;
 import java.util.List;
 
 public class Lox {
-  
+  private static final Interpreter interpreter = new Interpreter();
+
   public static void main(String[] args) throws IOException {
     runPrompt();
   }
@@ -31,9 +32,9 @@ public class Lox {
     Parser parser = new Parser(tokens);
     Expr expression = parser.parse();
 
-    // Somente se não houve erro:
+    // Só executa se não houve erro
     if (expression != null) {
-      System.out.println(new AstPrinter().print(expression));
+      interpreter.interpret(expression);
     }
   }
 
@@ -50,9 +51,6 @@ public class Lox {
   }
 
   private static void report(int line, String where, String message) {
-    System.err.println(
-      "[linha " + line + "] Erro" + where + ": " + message
-    );
+    System.err.println("[linha " + line + "] Erro" + where + ": " + message);
   }
 }
-
