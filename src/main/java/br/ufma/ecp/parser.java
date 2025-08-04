@@ -36,4 +36,8 @@ private boolean match(TokenType... types) {
 
   return false;
 }
+private boolean check(TokenType type) {
+  if (isAtEnd()) return false;
+  return peek().type == type;
+}
 
