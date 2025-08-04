@@ -53,4 +53,8 @@ public class Lox {
   private static void report(int line, String where, String message) {
     System.err.println("[linha " + line + "] Erro" + where + ": " + message);
   }
+
+  static void runtimeError(RuntimeError error) {
+    System.err.println(error.getMessage() + "\n[línea " + error.token.line + "]");
+  }
 }
