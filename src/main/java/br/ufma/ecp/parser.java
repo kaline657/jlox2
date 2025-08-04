@@ -2,122 +2,164 @@ package br.ufma.ecp;
 
 import java.util.List;
 
-import static com.craftinginterpreters.lox.TokenType.*;
+import static br.ufma.ecp.TokenType.BANG;
+import static br.ufma.ecp.TokenType.BANG_EQUAL;
+import static br.ufma.ecp.TokenType.EOF;
+import static br.ufma.ecp.TokenType.EQUAL_EQUAL;
+import static br.ufma.ecp.TokenType.FALSE;
+import static br.ufma.ecp.TokenType.GREATER;
+import static br.ufma.ecp.TokenType.GREATER_EQUAL;
+import static br.ufma.ecp.TokenType.LEFT_PAREN;
+import static br.ufma.ecp.TokenType.LESS;
+import static br.ufma.ecp.TokenType.LESS_EQUAL;
+import static br.ufma.ecp.TokenType.MINUS;
+import static br.ufma.ecp.TokenType.NIL;
+import static br.ufma.ecp.TokenType.NUMBER;
+import static br.ufma.ecp.TokenType.PLUS;
+import static br.ufma.ecp.TokenType.RIGHT_PAREN;
+import static br.ufma.ecp.TokenType.SLASH;
+import static br.ufma.ecp.TokenType.STAR;
+import static br.ufma.ecp.TokenType.STRING;
+import static br.ufma.ecp.TokenType.TRUE;
 
 class Parser {
+  private static class ParseError extends RuntimeException {}
+
   private final List<Token> tokens;
   private int current = 0;
 
   Parser(List<Token> tokens) {
     this.tokens = tokens;
   }
-}
-private Expr expression() {
-  return equality();
-}
-private Expr equality() {
-  Expr expr = comparison();
 
-  while (match(BANG_EQUAL, EQUAL_EQUAL)) {
-    Token operator = previous();
-    Expr right = comparison();
-    expr = new Expr.Binary(expr, operator, right);
-  }
-
-  return expr;
-}
-private boolean match(TokenType... types) {
-  for (TokenType type : types) {
-    if (check(type)) {
-      advance();
-      return true;
+  Expr parse() {
+    try {
+      return expression();
+    } catch (ParseError error) {
+      return null;
     }
   }
 
-  return false;
-}
-private boolean check(TokenType type) {
-  if (isAtEnd()) return false;
-  return peek().type == type;
-}
-private Token advance() {
-  if (!isAtEnd()) current++;
-  return previous();
-}
-
-private boolean isAtEnd() {
-  return peek().type == EOF;
-}
-
-private Token peek() {
-  return tokens.get(current);
-}
-
-private Token previous() {
-  return tokens.get(current - 1);
-}
-private Expr comparison() {
-  Expr expr = term();
-
-  while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
-    Token operator = previous();
-    Expr right = term();
-    expr = new Expr.Binary(expr, operator, right);
+  private Expr expression() {
+    return equality();
   }
 
-  return expr;
-}
-private Expr term() {
-  Expr expr = factor();
+  private Expr equality() {
+    Expr expr = comparison();
 
-  while (match(MINUS, PLUS)) {
-    Token operator = previous();
-    Expr right = factor();
-    expr = new Expr.Binary(expr, operator, right);
+    while (match(BANG_EQUAL, EQUAL_EQUAL)) {
+      Token operator = previous();
+      Expr right = comparison();
+      expr = new Expr.Binary(expr, operator, right);
+    }
+
+    return expr;
   }
 
-  return expr;
-}
-private Expr factor() {
-  Expr expr = unary();
+  private Expr comparison() {
+    Expr expr = term();
 
-  while (match(SLASH, STAR)) {
-    Token operator = previous();
-    Expr right = unary();
-    expr = new Expr.Binary(expr, operator, right);
+    while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+      Token operator = previous();
+      Expr right = term();
+      expr = new Expr.Binary(expr, operator, right);
+    }
+
+    return expr;
   }
 
-  return expr;
-}
-private Expr unary() {
-  if (match(BANG, MINUS)) {
-    Token operator = previous();
-    Expr right = unary();
-    return new Expr.Unary(operator, right);
+  private Expr term() {
+    Expr expr = factor();
+
+    while (match(MINUS, PLUS)) {
+      Token operator = previous();
+      Expr right = factor();
+      expr = new Expr.Binary(expr, operator, right);
+    }
+
+    return expr;
   }
 
-  return primary();
-}
-private Expr primary() {
-  if (match(FALSE)) return new Expr.Literal(false);
-  if (match(TRUE)) return new Expr.Literal(true);
-  if (match(NIL)) return new Expr.Literal(null);
+  private Expr factor() {
+    Expr expr = unary();
 
-  if (match(NUMBER, STRING)) {
-    return new Expr.Literal(previous().literal);
+    while (match(SLASH, STAR)) {
+      Token operator = previous();
+      Expr right = unary();
+      expr = new Expr.Binary(expr, operator, right);
+    }
+
+    return expr;
   }
 
-  if (match(LEFT_PAREN)) {
-    Expr expr = expression();
-    consume(RIGHT_PAREN, "Esperado ')' após expressão.");
-    return new Expr.Grouping(expr);
+  private Expr unary() {
+    if (match(BANG, MINUS)) {
+      Token operator = previous();
+      Expr right = unary();
+      return new Expr.Unary(operator, right);
+    }
+
+    return primary();
   }
 
-  throw error(peek(), "Esperado expressão.");
-}
-private Token consume(TokenType type, String message) {
-  if (check(type)) return advance();
+  private Expr primary() {
+    if (match(FALSE)) return new Expr.Literal(false);
+    if (match(TRUE)) return new Expr.Literal(true);
+    if (match(NIL)) return new Expr.Literal(null);
 
-  throw error(peek(), message);
-}
+    if (match(NUMBER, STRING)) {
+      return new Expr.Literal(previous().literal);
+    }
 
+    if (match(LEFT_PAREN)) {
+      Expr expr = expression();
+      consume(RIGHT_PAREN, "Esperado ')' após expressão.");
+      return new Expr.Grouping(expr);
+    }
+
+    throw error(peek(), "Esperado expressão.");
+  }
+
+  private boolean match(TokenType... types) {
+    for (TokenType type : types) {
+      if (check(type)) {
+        advance();
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private boolean check(TokenType type) {
+    if (isAtEnd()) return false;
+    return peek().type == type;
+  }
+
+  private Token advance() {
+    if (!isAtEnd()) current++;
+    return previous();
+  }
+
+  private boolean isAtEnd() {
+    return peek().type == EOF;
+  }
+
+  private Token peek() {
+    return tokens.get(current);
+  }
+
+  private Token previous() {
+    return tokens.get(current - 1);
+  }
+
+  private Token consume(TokenType type, String message) {
+    if (check(type)) return advance();
+    throw error(peek(), message);
+  }
+
+  private ParseError error(Token token, String message) {
+    Lox.error(token, message);
+    return new ParseError();
+  }
+}
